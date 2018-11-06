@@ -6,7 +6,7 @@ Variational autoencoder encodes the image into a distribution over latent space,
 
 Variational autoencoders learn the function transforming an image into a latent representation. The parameters for this transformation are learned from a set of images. In this sense we train a distance measure based on a set of images.
 
-# Results
+## Results
 
 The mnist dataset consists of images of written numbers. Let's take some random images from the test set, and find the nearest 9 images for them. We find that the nearest images quite accurately are images of the same number. In the following pictures the leftmost image is randomly selected test image, and the images on its right are the 9 nearest images to it in the latent space.
 
