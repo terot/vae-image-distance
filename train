@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+# Train a variational autoencoder to encode and decode images.
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+import os
+
+import edward as ed
+import tensorflow as tf
+
+from edward.util import Progbar
+from scipy.misc import imsave
+
+import lib.model as model
+import lib.batch as batch
+import lib.utils as utils
+
+def get_args():
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument('--data_dir', type=str,
+                      default='data', help="data directory")
+  parser.add_argument('--dataset', help="dataset for training ('mnist' or 'fashion-mnist')",
+                      default="mnist", type=str)
+  parser.add_argument('--dim_latent', type=int,
+                      default=10, help="dimension of latent space")
+  parser.add_argument('--batch_size', type=int,
+                      default=128, help="batch size for training and sample generation")
+  parser.add_argument('--num_epochs', type=int,
+                      default=100, help="number of epochs")
+  parser.add_argument('--verbose', action="store_true",
+                      help="Verbose printing")
+  return parser.parse_args()
+
+
+def main(args):
+  if args.verbose:
+    print("args: " + str(vars(args)))
+        
+  # Data
+  data = utils.load_data(args.dataset, utils.input_dir(args))
+  data_generator = batch.generator(data["x_train"], args.batch_size)
+
+  # Model
+  m = model.Model(args.batch_size, args.dim_latent)
+  
+  tf.global_variables_initializer().run()
+
+  n_iter_per_epoch = data["x_train"].shape[0] // args.batch_size
+  for epoch in range(1, args.num_epochs + 1):
+    print("Epoch: {0}".format(epoch))
+    avg_loss = 0.0
+
+    pbar = Progbar(n_iter_per_epoch)
+    for t in range(1, n_iter_per_epoch + 1):
+      pbar.update(t)
+      x_batch = next(data_generator)
+      info_dict = m.inference.update(feed_dict={m.x_ph: x_batch})
+      avg_loss += info_dict['loss']
+
+    # Print a lower bound to the average marginal likelihood for an
+    # image.
+    avg_loss = avg_loss / n_iter_per_epoch
+    avg_loss = avg_loss / args.batch_size
+    print("-log p(x) <= {:0.3f}".format(avg_loss))
+
+    # Save model
+    saver = tf.train.Saver()
+    sess = ed.get_session()
+    saver.save(sess, utils.model_checkpoint(args))
+
+    # Visualize hidden representations.
+    sample_dir = utils.sample_dir(args)
+    if not os.path.exists(sample_dir):
+      os.makedirs(sample_dir)
+      images = m.hidden_rep.eval()
+      for i in range(args.batch_size):
+        imsave(os.path.join(sample_dir, '%d.png') % i, images[i].reshape(data["image_width"], data["image_height"]))
+
+if __name__ == "__main__":
+  main(get_args())
