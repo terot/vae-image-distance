@@ -16,10 +16,6 @@ Variational autoencoders learn the function transforming an image into a latent 
 
 ## Usage
 
-Install requirements:
-
-`pip install -r requirements.txt`
-
 Train the VAE on MNIST dataset:
 
 `./train`
