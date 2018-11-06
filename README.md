@@ -12,7 +12,7 @@ The mnist dataset consists of images of written numbers. Let's take some random 
 
 ![Screenshot](images/example1.png)
 
-![Screenshot](images/example1.png)
+![Screenshot](images/example2.png)
 
 With fashion-mnist dataset the results look quite promising as well.
 
